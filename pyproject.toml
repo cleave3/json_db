@@ -1,0 +1,19 @@
+[project]
+name = "json-db"
+version = "0.1.0"
+description = "A lightweight document-oriented database using JSON for data persistence."
+readme = "README.md"
+authors = [
+    { name = "cleave3", email = "owhiroroeghele@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[build-system]
+requires = ["uv-build>=0.1.0"]
+build-backend = "uv_build"

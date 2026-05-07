@@ -1,130 +1,161 @@
 # JSON DB Engine
 
-Added group_by and aggregate methods to the JSON DB engine. The group_by method groups documents by a field, and aggregate supports operations like sum, avg, min, and max.
-A lightweight document-oriented database using JSON for data persistence. Inspired by MongoDB, this project supports nested queries, indexing for faster lookups, query operators, and a familiar API.
+A lightweight, document-oriented database using JSON for data persistence. Inspired by MongoDB, this project supports nested queries, indexing for faster lookups, query operators, and a familiar API.
 
 ## Features
 
-* Document-based storage using JSON files
-* Automatic `_id` generation (UUID)
-* Query operators: `$gt`, `$lt`, `$gte`, `$lte`, `$ne`, `$in`, `$regex`
-* Nested field query support (e.g., `address.city`)
-* Create and use indexes for fast lookup
-* Basic operations: `insert_one`, `find`, `find_one`, `update`, `delete`, `group_by`, `aggregate`
+- **Document-based storage**: Data is stored in simple JSON files.
+- **Automatic `_id` generation**: Every document gets a unique UUID if not provided.
+- **Advanced Querying**: Supports nested field lookups and a variety of query operators.
+- **Indexing**: Create indexes on specific fields to speed up queries.
+- **Aggregation & Grouping**: Perform SQL-like `GROUP BY` and aggregations (`sum`, `avg`, `min`, `max`).
+- **Persistence**: Data is automatically saved to disk after write operations.
+
+---
 
 ## Installation
 
 ```bash
-pip install json-db-engine  # Assuming packaging is done
+# Clone the repository
+git clone https://github.com/cleave3/json_db.git
+cd json_db
+
+# Install dependencies using uv
+uv sync
 ```
+
+---
+
+## API Reference
+
+### `JSONDatabase`
+The main entry point for managing collections.
+
+- `db = JSONDatabase(base_path="storage")`: Initialize the database with a storage directory.
+- `collection = db.get_collection(name)`: Get or create a collection by name.
+
+### `JSONCollection`
+Represents a single collection of documents.
+
+- `insert_one(document)`: Inserts a single document.
+- `find(query)`: Returns a list of documents matching the query.
+- `find_one(query)`: Returns the first document matching the query, or `None`.
+- `update(query, updates)`: Updates all documents matching the query with the provided fields.
+- `delete(query)`: Deletes all documents matching the query.
+- `create_index(field)`: Creates an index on the specified field.
+- `group_by(field)`: Groups documents by a specific field.
+- `aggregate(field, operation)`: Performs an aggregation (`sum`, `avg`, `min`, `max`) on a numeric field.
+
+---
 
 ## Basic Usage
 
 ```python
 from json_db import JSONDatabase
 
+# Initialize DB
 db = JSONDatabase()
 users = db.get_collection("users")
 
-# Insert a document
-users.insert_one({"name": "Alice", "age": 30, "address": {"city": "London"}})
+# Insert
+users.insert_one({
+    "name": "Alice", 
+    "age": 30, 
+    "address": {"city": "London", "zip": "SW1A"}
+})
 
-# Find documents
-results = users.find({"age": {"$gt": 25}})
-print(results)
+# Custom _id (optional)
+users.insert_one({"_id": "custom-id-123", "name": "Bob"})
 
-# Find one document
-user = users.find_one({"name": "Alice"})
+# Find with nested field
+user = users.find_one({"address.city": "London"})
 print(user)
 
-# Update documents
+# Update
 users.update({"name": "Alice"}, {"age": 31})
-
-# Delete documents
-users.delete({"name": "Alice"})
-
-# Create an index
-users.create_index("name")
-
-# Group by a field
-grouped = users.group_by("address.city")
-print(grouped)
 
 # Aggregate
 total_age = users.aggregate("age", "sum")
-print(total_age)
-```
-
-## Custom Storage Directory
-
-By default, all collections and indexes are stored in the `storage/` directory. However, you can specify a custom directory using the `base_path` parameter:
-
-```python
-from json_db_engine import JSONDatabase
-
-db = JSONDatabase(base_path="my_data")
-users = db.get_collection("users")
-users.insert_one({"name": "Bob", "age": 28})
-```
-
-This will store data in:
-
-* `my_data/users.json`
-* `my_data/users.index.json`
-
-## Using in Frameworks
-
-### Flask Example
-
-```python
-from flask import Flask, jsonify
-from json_db_engine import JSONDatabase
-
-app = Flask(__name__)
-db = JSONDatabase()
-
-@app.route("/users")
-def get_users():
-    users = db.get_collection("users")
-    return jsonify(users.find())
-```
-
-### FastAPI Example
-
-```python
-from fastapi import FastAPI
-from json_db_engine import JSONDatabase
-
-app = FastAPI()
-db = JSONDatabase()
-
-@app.get("/users")
-def read_users():
-    users = db.get_collection("users")
-    return users.find()
-```
-
-## Indexing
-
-```python
-users = db.get_collection("users")
-users.create_index("name")
-```
-
-## Advanced Queries
-
-```python
-users.find({"age": {"$gt": 20, "$lt": 40}})
-users.find({"address.city": "London"})
-users.find({"name": {"$regex": "^A"}})
+print(f"Total Age: {total_age}")
 ```
 
 ---
 
-## Contributing
+## Query Operators
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+JSON DB supports several operators for advanced filtering:
+
+| Operator | Description | Example |
+| :--- | :--- | :--- |
+| `$gt` | Greater than | `{"age": {"$gt": 25}}` |
+| `$lt` | Less than | `{"age": {"$lt": 40}}` |
+| `$gte` | Greater than or equal | `{"age": {"$gte": 30}}` |
+| `$lte` | Less than or equal | `{"age": {"$lte": 30}}` |
+| `$ne` | Not equal | `{"status": {"$ne": "active"}}` |
+| `$in` | Value in list | `{"tags": {"$in": ["python", "db"]}}` |
+| `$regex`| Regular expression | `{"name": {"$regex": "^A.*"}}` |
+
+### Complex Query Example
+```python
+results = users.find({
+    "age": {"$gte": 20, "$lte": 50},
+    "address.city": {"$in": ["London", "Paris"]},
+    "name": {"$regex": "i"}
+})
+```
+
+---
+
+## Indexing for Performance
+
+Indexes significantly speed up `find` operations by avoiding full collection scans.
+
+```python
+# Create an index on the 'email' field
+users.create_index("email")
+
+# Subsequent queries on 'email' will use the index
+user = users.find_one({"email": "alice@example.com"})
+```
+
+---
+
+## Aggregation & Grouping
+
+### Group By
+Groups documents by a specific field (supports nested fields).
+```python
+# Group users by city
+cities = users.group_by("address.city")
+for city, docs in cities.items():
+    print(f"{city}: {len(docs)} users")
+```
+
+### Aggregate
+Performs calculations on numeric fields. Supported operations: `sum`, `avg`, `min`, `max`.
+```python
+average_age = users.aggregate("age", "avg")
+oldest_user = users.aggregate("age", "max")
+```
+
+---
+
+## Testing
+
+Run the test suite with verbose output to see the results of each test case:
+
+```bash
+uv run pytest -s test_collection.py
+```
+
+---
+
+## Limitations
+- **Not Thread-Safe**: This is a lightweight engine designed for single-process use.
+- **In-Memory Reads**: Reads the entire collection into memory for operations (suitable for small to medium datasets).
+
+## Contributing
+Pull requests are welcome! For major changes, please open an issue first.
 
 ## License
-
 [MIT](LICENSE)

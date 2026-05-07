@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from collection import JSONCollection
+from .collection import JSONCollection
 
 
 class JSONDatabase:

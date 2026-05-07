@@ -106,10 +106,28 @@ class JSONCollection:
 
     def delete(self, query: Dict[str, Any]):
         data = self._load()
+        to_delete = [doc for doc in data if self._match(doc, query)]
+        if not to_delete:
+            return
+
         new_data = [doc for doc in data if not self._match(doc, query)]
         self._save(new_data)
-        self._rebuild_indexes(new_data)
+        
+        # Incremental index update
+        for doc in to_delete:
+            self._remove_from_indexes(doc)
         self._save_indexes()
+
+    def _remove_from_indexes(self, document: Dict[str, Any]):
+        for key in self.indexes:
+            value = self._get_nested_value(document, key)
+            if value is not None:
+                value = str(value)
+                if value in self.indexes[key] and document["_id"] in self.indexes[key][value]:
+                    self.indexes[key][value].remove(document["_id"])
+                    # Clean up empty index entries
+                    if not self.indexes[key][value]:
+                        del self.indexes[key][value]
 
     def _update_indexes(self, document: Dict[str, Any]):
         for key in self.indexes:
@@ -125,7 +143,10 @@ class JSONCollection:
         keys = key.split(".")
         val = doc
         for k in keys:
-            val = val.get(k, {}) if isinstance(val, dict) else {}
+            if isinstance(val, dict):
+                val = val.get(k, {})
+            else:
+                return None
         return val if val != {} else None
 
     def _query_using_indexes(self, query: Dict[str, Any]) -> Union[None, List[str]]:
@@ -166,17 +187,21 @@ class JSONCollection:
 
     def aggregate(self, field: str, operation: str) -> Any:
         data = self._load()
-        values = [
-            self._get_nested_value(doc, field)
-            for doc in data
-            if isinstance(self._get_nested_value(doc, field), (int, float))
-        ]
+        values = []
+        for doc in data:
+            val = self._get_nested_value(doc, field)
+            if isinstance(val, (int, float)):
+                values.append(val)
+        
+        if not values:
+            return 0 if operation == "avg" else None if operation in ["min", "max"] else 0
+
         if operation == "sum":
             return sum(values)
         elif operation == "avg":
-            return sum(values) / len(values) if values else 0
+            return sum(values) / len(values)
         elif operation == "min":
-            return min(values) if values else None
+            return min(values)
         elif operation == "max":
-            return max(values) if values else None
+            return max(values)
         return None
