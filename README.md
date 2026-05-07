@@ -1,148 +1,231 @@
-# JSON DB Engine
+# Owi JSONDB
 
-A lightweight, document-oriented database using JSON for data persistence. Inspired by MongoDB, this project supports nested queries, indexing for faster lookups, query operators, and a familiar API.
+[![PyPI version](https://img.shields.io/pypi/v/owi-jsondb.svg)](https://pypi.org/project/owi-jsondb/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Versions](https://img.shields.io/pypi/pyversions/owi-jsondb.svg)](https://pypi.org/project/owi-jsondb/)
+[![GitHub](https://img.shields.io/badge/GitHub-cleave3%2Fowi--jsondb-blue?logo=github)](https://github.com/cleave3/owi-jsondb)
 
-## Features
-
-- **Document-based storage**: Data is stored in simple JSON files.
-- **Automatic `_id` generation**: Every document gets a unique UUID if not provided.
-- **Advanced Querying**: Supports nested field lookups and a variety of query operators.
-- **Indexing**: Create indexes on specific fields to speed up queries.
-- **Aggregation & Grouping**: Perform SQL-like `GROUP BY` and aggregations (`sum`, `avg`, `min`, `max`).
-- **Persistence**: Data is automatically saved to disk after write operations.
+**Owi JSONDB** is a lightweight, document-oriented database engine designed for Python applications that need a simple, schema-less data store without the overhead of a full database server. Inspired by MongoDB, it provides a familiar API, supports nested queries, indexing, and powerful aggregation tools—all using standard JSON files for persistence.
 
 ---
 
-## Installation
+## 🚀 Key Features
+
+- **📂 Document-Oriented**: Store data as flexible, schema-less JSON documents.
+- **🆔 Auto-ID**: Automatic UUID generation for every document (custom IDs also supported).
+- **🔍 Advanced Querying**: Support for nested field lookups (e.g., `user.profile.city`) and rich query operators.
+- **⚡ Fast Performance**: In-memory data processing with disk-based indexing for optimized lookups.
+- **📊 Aggregations**: Built-in support for `GROUP BY` and numeric aggregations (`sum`, `avg`, `min`, `max`).
+- **🛡️ Simple & Reliable**: Pure Python implementation with automatic data persistence on writes.
+
+---
+
+## 📦 Supported Data Types
+
+Owi JSONDB supports all standard JSON-serializable Python types:
+- **Primitives**: `str`, `int`, `float`, `bool`, `None`.
+- **Collections**: `list` (Arrays) and `dict` (Objects).
+
+---
+
+## 🛠️ Installation
 
 ```bash
-# Clone the repository
-git clone https://github.com/cleave3/json_db.git
-cd json_db
+pip install owi-jsondb
+```
 
-# Install dependencies using uv
-uv sync
+Or using `uv`:
+
+```bash
+uv add owi-jsondb
 ```
 
 ---
 
-## API Reference
+## 📖 Complete Use Case Guide
 
-### `JSONDatabase`
-The main entry point for managing collections.
-
-- `db = JSONDatabase(base_path="storage")`: Initialize the database with a storage directory.
-- `collection = db.get_collection(name)`: Get or create a collection by name.
-
-### `JSONCollection`
-Represents a single collection of documents.
-
-- `insert_one(document)`: Inserts a single document.
-- `find(query)`: Returns a list of documents matching the query.
-- `find_one(query)`: Returns the first document matching the query, or `None`.
-- `update(query, updates)`: Updates all documents matching the query with the provided fields.
-- `delete(query)`: Deletes all documents matching the query.
-- `create_index(field)`: Creates an index on the specified field.
-- `group_by(field)`: Groups documents by a specific field.
-- `aggregate(field, operation)`: Performs an aggregation (`sum`, `avg`, `min`, `max`) on a numeric field.
-
----
-
-## Basic Usage
+### 1. Database & Collection Management
+Initialize your database and access collections.
 
 ```python
-from json_db import JSONDatabase
+from owi_jsondb import JSONDatabase
 
-# Initialize DB
-db = JSONDatabase()
+# Initialize with a custom storage path (defaults to "storage")
+db = JSONDatabase(base_path="my_app_data")
+
+# Get or create a collection
 users = db.get_collection("users")
-
-# Insert
-users.insert_one({
-    "name": "Alice", 
-    "age": 30, 
-    "address": {"city": "London", "zip": "SW1A"}
-})
-
-# Custom _id (optional)
-users.insert_one({"_id": "custom-id-123", "name": "Bob"})
-
-# Find with nested field
-user = users.find_one({"address.city": "London"})
-print(user)
-
-# Update
-users.update({"name": "Alice"}, {"age": 31})
-
-# Aggregate
-total_age = users.aggregate("age", "sum")
-print(f"Total Age: {total_age}")
+products = db.get_collection("products")
 ```
 
----
+### 2. Inserting Documents
+Supports automatic ID generation or manual ID assignment.
 
-## Query Operators
-
-JSON DB supports several operators for advanced filtering:
-
-| Operator | Description | Example |
-| :--- | :--- | :--- |
-| `$gt` | Greater than | `{"age": {"$gt": 25}}` |
-| `$lt` | Less than | `{"age": {"$lt": 40}}` |
-| `$gte` | Greater than or equal | `{"age": {"$gte": 30}}` |
-| `$lte` | Less than or equal | `{"age": {"$lte": 30}}` |
-| `$ne` | Not equal | `{"status": {"$ne": "active"}}` |
-| `$in` | Value in list | `{"tags": {"$in": ["python", "db"]}}` |
-| `$regex`| Regular expression | `{"name": {"$regex": "^A.*"}}` |
-
-### Complex Query Example
 ```python
-results = users.find({
-    "age": {"$gte": 20, "$lte": 50},
-    "address.city": {"$in": ["London", "Paris"]},
-    "name": {"$regex": "i"}
-})
+# Insert with auto-generated UUID
+users.insert_one({"name": "Alice", "age": 30})
+
+# Insert with a custom manual _id
+users.insert_one({"_id": "user_101", "name": "Bob", "role": "admin"})
 ```
 
----
-
-## Indexing for Performance
-
-Indexes significantly speed up `find` operations by avoiding full collection scans.
+### 3. Finding Documents
+Powerful filtering with support for nested fields.
 
 ```python
-# Create an index on the 'email' field
+# Find all documents
+all_users = users.find()
+
+# Find with exact match
+admins = users.find({"role": "admin"})
+
+# Find ONE document
+bob = users.find_one({"_id": "user_101"})
+
+# Deeply nested field lookup
+uk_users = users.find({"address.country": "UK"})
+```
+
+### 4. Advanced Query Operators
+Filter data using MongoDB-like operators.
+
+```python
+# Greater Than / Less Than
+young_users = users.find({"age": {"$lt": 25}})
+senior_users = users.find({"age": {"$gte": 65}})
+
+# Not Equal
+active_users = users.find({"status": {"$ne": "banned"}})
+
+# In List
+specific_groups = users.find({"group": {"$in": ["A", "C"]}})
+
+# Regular Expressions (Case-insensitive search)
+smiths = users.find({"name": {"$regex": "(?i)smith"}})
+
+# Multiple operators on one field
+filtered = users.find({"score": {"$gt": 50, "$lt": 100}})
+```
+
+### 5. Updating Data
+Modify existing documents using filters.
+
+```python
+# Update a single document's field
+users.update({"_id": "user_101"}, {"role": "super-admin"})
+
+# Bulk update all matching documents
+users.update({"status": "active"}, {"last_login": "2024-01-01"})
+```
+
+### 6. Deleting Data
+Remove documents selectively.
+
+```python
+# Delete a specific document
+users.delete({"_id": "user_101"})
+
+# Bulk delete
+users.delete({"age": {"$lt": 18}})
+
+# Delete all documents in a collection
+users.delete({})
+```
+
+### 7. Indexing for Speed
+Significantly improve performance for large datasets.
+
+```python
+# Create index on the 'email' field
 users.create_index("email")
 
-# Subsequent queries on 'email' will use the index
+# Create index on a NESTED field
+users.create_index("metadata.auth_id")
+
+# Queries on these fields will now use the fast index lookup
 user = users.find_one({"email": "alice@example.com"})
 ```
 
+> **💡 Pro Tip**: Owi JSONDB maintains index files (`.index.json`) automatically. Calling `create_index()` is idempotent and can be safely called every time your app starts.
+
 ---
 
-## Aggregation & Grouping
+## 📝 Simple Application Example: Todo List
 
-### Group By
-Groups documents by a specific field (supports nested fields).
 ```python
-# Group users by city
-cities = users.group_by("address.city")
-for city, docs in cities.items():
-    print(f"{city}: {len(docs)} users")
+from owi_jsondb import JSONDatabase
+
+# Setup
+db = JSONDatabase(base_path="todo_app")
+tasks = db.get_collection("tasks")
+tasks.create_index("name") # create index
+
+# Add tasks
+tasks.insert_one({"title": "Record Demo", "priority": 1, "completed": False})
+tasks.insert_one({"title": "Publish Package", "priority": 0, "completed": False})
+
+# Mark task as completed
+tasks.update({"title": "Record Demo"}, {"completed": True})
+
+# Get pending high-priority tasks
+high_priority = tasks.find({"priority": {"$lt": 1}, "completed": False})
+print(f"Pending High Priority: {[t['title'] for t in high_priority]}")
 ```
 
-### Aggregate
-Performs calculations on numeric fields. Supported operations: `sum`, `avg`, `min`, `max`.
+---
+
+## 📊 Aggregation & Grouping
+
+#### Group By
 ```python
+# Group documents by city
+by_city = users.group_by("address.city")
+```
+
+#### Numeric Aggregations
+```python
+# Supported: sum, avg, min, max
+total_score = users.aggregate("score", "sum")
 average_age = users.aggregate("age", "avg")
 oldest_user = users.aggregate("age", "max")
+youngest_user = users.aggregate("age", "min")
 ```
 
 ---
 
-## Testing
+## 🔍 Operator Summary Table
 
-Run the test suite with verbose output to see the results of each test case:
+| Operator | Function | Example Usage |
+| :--- | :--- | :--- |
+| `$gt` | Greater than | `{"age": {"$gt": 21}}` |
+| `$lt` | Less than | `{"price": {"$lt": 9.99}}` |
+| `$gte` | Greater or equal | `{"score": {"$gte": 50}}` |
+| `$lte` | Less or equal | `{"stock": {"$lte": 10}}` |
+| `$ne` | Not equal | `{"type": {"$ne": "internal"}}` |
+| `$in` | Exists in list | `{"tags": {"$in": ["python", "db"]}}` |
+| `$regex`| Regex match | `{"name": {"$regex": "^A.*"}}` |
+
+---
+
+## 📂 API Reference
+
+### `JSONDatabase`
+- `JSONDatabase(base_path="storage")`: Initialize database directory.
+- `get_collection(name)`: Returns a `JSONCollection` instance.
+
+### `JSONCollection`
+- `insert_one(document)`: Add a document.
+- `find(query={})`: Find matching documents.
+- `find_one(query={})`: Find first match.
+- `update(query, updates)`: Update matching documents.
+- `delete(query)`: Remove matching documents.
+- `create_index(field)`: Enable indexing for a field.
+- `group_by(field)`: Group by field value.
+- `aggregate(field, operation)`: `sum`, `avg`, `min`, `max`.
+
+---
+
+## 🧪 Testing
 
 ```bash
 uv run pytest -s test_collection.py
@@ -150,12 +233,10 @@ uv run pytest -s test_collection.py
 
 ---
 
-## Limitations
-- **Not Thread-Safe**: This is a lightweight engine designed for single-process use.
-- **In-Memory Reads**: Reads the entire collection into memory for operations (suitable for small to medium datasets).
+## 🔗 Links
+- **GitHub**: [cleave3/owi-jsondb](https://github.com/cleave3/owi-jsondb)
+- **PyPI**: [owi-jsondb](https://pypi.org/project/owi-jsondb/)
+- **Issues**: [Report a bug](https://github.com/cleave3/owi-jsondb/issues)
 
-## Contributing
-Pull requests are welcome! For major changes, please open an issue first.
-
-## License
-[MIT](LICENSE)
+## ⚖️ License
+Distributed under the MIT License. See `LICENSE` for more information.

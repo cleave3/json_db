@@ -1,13 +1,26 @@
 [project]
-name = "json-db"
-version = "0.1.0"
+name = "owi-jsondb"
+version = "0.1.1"
 description = "A lightweight document-oriented database using JSON for data persistence."
 readme = "README.md"
 authors = [
     { name = "cleave3", email = "owhiroroeghele@gmail.com" }
 ]
 requires-python = ">=3.13"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Database :: Database Engines/Servers",
+]
+keywords = ["json", "database", "nosql", "lightweight", "mongodb-like"]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/cleave3/owi-jsondb"
+Repository = "https://github.com/cleave3/owi-jsondb"
+Issues = "https://github.com/cleave3/owi-jsondb/issues"
 
 [dependency-groups]
 dev = [
@@ -15,5 +28,5 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv-build>=0.1.0"]
+requires = ["uv-build>=0.1.1"]
 build-backend = "uv_build"

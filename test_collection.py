@@ -2,7 +2,7 @@ import shutil
 import tempfile
 import pytest
 from pathlib import Path
-from json_db.collection import JSONCollection
+from owi_jsondb.collection import JSONCollection
 
 
 @pytest.fixture(scope="function")
