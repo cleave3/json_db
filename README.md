@@ -1,6 +1,7 @@
 # Owi JSONDB
 
 [![PyPI version](https://img.shields.io/pypi/v/owi-jsondb.svg)](https://pypi.org/project/owi-jsondb/)
+[![Downloads](https://static.pepy.tech/badge/owi-jsondb)](https://pepy.tech/project/owi-jsondb)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python Versions](https://img.shields.io/pypi/pyversions/owi-jsondb.svg)](https://pypi.org/project/owi-jsondb/)
 [![GitHub](https://img.shields.io/badge/GitHub-cleave3%2Fowi--jsondb-blue?logo=github)](https://github.com/cleave3/owi-jsondb)
